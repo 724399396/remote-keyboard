@@ -34,12 +34,14 @@ sendCommand cmd = withFocus $
   callCommand $ "xdotool key " ++ cmd
 
 dispath :: Handle -> IO ()
-dispath h = do
+dispath h = (do
   input <- hGetLine h
   putStrLn $ "execute " ++ input
   case lookup input cmdMap of
+    Just "shutdown" -> callCommand $ "sudo shutdown -h now"
     Just cmd -> sendCommand cmd
     Nothing -> return ()
+  dispath h) `catch` (\e -> putStrLn (show (e :: IOException)) >> return ())
 
 net :: (Handle -> IO ()) -> IO ()
 net action = do
@@ -49,7 +51,8 @@ net action = do
     bind s addr
     putStrLn $ show addr
     listen s 5
-    forever $ do (ns, _) <- accept s
+    forever $ do (ns, n) <- accept s
+                 putStrLn $ "connect from " ++ show n
                  forkIO (bracket (socketToHandle ns ReadMode) hClose $ \h -> 
                          do hSetBuffering h NoBuffering
                             action h)

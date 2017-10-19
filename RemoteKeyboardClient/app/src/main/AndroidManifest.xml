@@ -19,7 +19,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".SocketSender"/>
+        <service android:name=".SocketService"/>
     </application>
 
 </manifest>

@@ -1,13 +1,21 @@
 package com.weili.remotekeyboardclient;
 
-import android.support.v7.app.AppCompatActivity;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.Button;
 
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MainActivity extends AppCompatActivity {
+    SocketService mService;
+    boolean mBound = false;
+    AtomicInteger count = new AtomicInteger(0);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,9 +41,49 @@ public class MainActivity extends AppCompatActivity {
             findViewById(id).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    new Thread(new SocketSender(idStringHashMap.get(id))).start();
+                    if (mBound) {
+                        mService.send(idStringHashMap.get(id));
+                    }
                 }
             });
         }
+        findViewById(R.id.shutdown).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mBound && count.addAndGet(1) > 5) {
+                    mService.send("shutdown\n");
+                }
+            }
+        });
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Intent intent = new Intent(this, SocketService.class);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (mBound) {
+            unbindService(mConnection);
+            mBound = false;
+        }
+    }
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            SocketService.SocketBinder binder = (SocketService.SocketBinder) service;
+            mService = binder.getService();
+            mBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mBound = false;
+        }
+    };
 }

@@ -84,8 +84,13 @@
         android:id="@+id/full"
         android:layout_width="128dp"
         android:layout_height="48dp"
-        android:text="full"
-        tools:layout_editor_absoluteX="312dp"
-        tools:layout_editor_absoluteY="1050dp" />
+        android:text="full" />
 
+
+    <Button
+        android:id="@+id/shutdown"
+        android:layout_width="128dp"
+        android:layout_height="48dp"
+        android:text="shutdown"
+        android:layout_marginTop="200dp"/>
 </LinearLayout>

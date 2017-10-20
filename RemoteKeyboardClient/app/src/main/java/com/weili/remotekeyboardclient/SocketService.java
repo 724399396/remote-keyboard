@@ -5,14 +5,11 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
-
-/**
- * Created by weili on 17-10-17.
- */
 
 public class SocketService extends Service {
     private final SocketBinder binder = new SocketBinder();
@@ -32,6 +29,7 @@ public class SocketService extends Service {
     public void onDestroy() {
         if (socket != null) {
             try {
+                Log.i("socket service", "close socket");
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();

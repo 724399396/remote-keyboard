@@ -8,19 +8,37 @@ import Control.Exception
 import Control.Concurrent
 import Control.Monad
 import Data.Map.Strict
+import Control.Lens
+import Control.Lens.Tuple
 
-cmdMap :: Map String String
-cmdMap = fromList [ ("sForward", "shift+Right")
-                  , ("mForward", "alt+Right")
-                  , ("lForward", "ctrl+Right")
-                  , ("sBackward", "shift+Left")
-                  , ("mBackward", "alt+Left")
-                  , ("lBackward", "ctrl+Left")
-                  , ("previous", "p")
-                  , ("next", "n")
-                  , ("play", "space")
-                  , ("full", "f")
-                  ]
+data Command = Xdotool String
+             | Normal String
+
+cmdMap :: Map String Command
+cmdMap = fromList $ (fmap (over _2 Xdotool)
+                     [ ("sForward", "shift+Right")
+                     , ("mForward", "alt+Right")
+                     , ("lForward", "ctrl+Right")
+
+                     , ("sBackward", "shift+Left")
+                     , ("mBackward", "alt+Left")
+                     , ("lBackward", "ctrl+Left")
+
+                     , ("previous", "p")
+                     , ("next", "n")
+                     , ("play", "space")
+
+                     , ("full", "f")
+
+                     , ("uVolume", "ctrl+Up")
+                     , ("dVolume", "ctrl+Down")
+                     , ("mute", "m")
+
+                     ,("close", "alt+F4")
+                     ]) ++
+         (fmap (over _2 Normal)
+          [("open", "vlc /media/weili/New\\ Volume/Program")
+          ,("shutdown", "shutdown")])
 
 focus :: IO ()
 focus = do
@@ -30,7 +48,7 @@ withFocus :: IO () -> IO ()
 withFocus action = focus >> action
 
 sendCommand :: String -> IO ()
-sendCommand cmd = withFocus $
+sendCommand cmd =
   callCommand $ "xdotool key " ++ cmd
 
 dispath :: Handle -> IO ()
@@ -38,10 +56,13 @@ dispath h = (do
   input <- hGetLine h
   putStrLn $ "execute " ++ input
   case lookup input cmdMap of
-    Just "shutdown" -> callCommand $ "sudo shutdown -h now"
-    Just cmd -> sendCommand cmd
+    Just (Xdotool cmd) -> sendCommand cmd
+    Just (Normal x) -> callCommand x
     Nothing -> return ()
-  dispath h) `catch` (\e -> putStrLn (show (e :: IOException)) >> return ())
+  dispath h) `catch` (\e -> do
+                         putStrLn (show (e :: IOException))
+                         hClose h
+                     )
 
 net :: (Handle -> IO ()) -> IO ()
 net action = do
@@ -50,7 +71,7 @@ net action = do
   bracket (socket family Stream protocol) close $ \s -> do
     bind s addr
     putStrLn $ show addr
-    listen s 5
+    listen s 1
     forever $ do (ns, n) <- accept s
                  putStrLn $ "connect from " ++ show n
                  forkIO (bracket (socketToHandle ns ReadMode) hClose $ \h -> 

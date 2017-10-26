@@ -37,7 +37,7 @@ cmdMap = fromList $ (fmap (over _2 Xdotool)
                      ,("close", "alt+F4")
                      ]) ++
          (fmap (over _2 Normal)
-          [("open", "vlc /media/weili/New\\ Volume/Program &>/dev/null 2>&1")
+          [("open", "vlc &>/dev/null 2>&1")
           ,("shutdown", "shutdown")])
 
 focus :: IO ()
@@ -67,7 +67,7 @@ dispath h = (do
 net :: (Handle -> IO ()) -> IO ()
 net action = do
   let hints = defaultHints { addrFlags = [AI_NUMERICHOST, AI_NUMERICSERV], addrSocketType = Stream }
-  AddrInfo {addrAddress = addr, addrFamily = family, addrProtocol = protocol }:_ <- getAddrInfo (Just hints) (Just "0.0.0.0") (Just "6666")
+  AddrInfo {addrAddress = addr, addrFamily = family, addrProtocol = protocol }:_ <- getAddrInfo (Just hints) (Just "") (Just "")
   bracket (socket family Stream protocol) close $ \s -> do
     bind s addr
     putStrLn $ show addr

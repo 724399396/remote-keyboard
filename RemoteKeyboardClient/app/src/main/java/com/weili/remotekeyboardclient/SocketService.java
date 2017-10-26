@@ -54,7 +54,7 @@ public class SocketService extends Service {
         public void run() {
             try {
                 if (socket == null) {
-                    socket = new Socket("192.168.1.12", 6666);
+                    socket = new Socket("", );
                 }
                 OutputStream outputStream = socket.getOutputStream();
                 outputStream.write(command.getBytes());

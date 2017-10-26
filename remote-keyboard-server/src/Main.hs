@@ -1,15 +1,15 @@
 module Main where
 
-import Prelude hiding (lookup)
-import System.IO
-import System.Process
-import Network.Socket
-import Control.Exception
-import Control.Concurrent
-import Control.Monad
-import Data.Map.Strict
-import Control.Lens
-import Control.Lens.Tuple
+import           Control.Concurrent
+import           Control.Exception
+import           Control.Lens
+import           Control.Lens.Tuple
+import           Control.Monad
+import           Data.Map.Strict
+import           Network.Socket
+import           Prelude            hiding (lookup)
+import           System.IO
+import           System.Process
 
 data Command = Xdotool String
              | Normal String
@@ -30,14 +30,14 @@ cmdMap = fromList $ (fmap (over _2 Xdotool)
 
                      , ("full", "f")
 
-                     , ("uVolume", "ctrl+Up")
-                     , ("dVolume", "ctrl+Down")
-                     , ("mute", "m")
+                     , ("uVolume", "XF86AudioRaiseVolume")
+                     , ("dVolume", "XF86AudioLowerVolume")
+                     , ("mute", "XF86AudioMute")
 
                      ,("close", "alt+F4")
                      ]) ++
          (fmap (over _2 Normal)
-          [("open", "vlc /media/weili/New\\ Volume/Program")
+          [("open", "vlc /media/weili/New\\ Volume/Program &>/dev/null 2>&1")
           ,("shutdown", "shutdown")])
 
 focus :: IO ()
@@ -57,8 +57,8 @@ dispath h = (do
   putStrLn $ "execute " ++ input
   case lookup input cmdMap of
     Just (Xdotool cmd) -> sendCommand cmd
-    Just (Normal x) -> callCommand x
-    Nothing -> return ()
+    Just (Normal x)    -> callCommand x
+    Nothing            -> return ()
   dispath h) `catch` (\e -> do
                          putStrLn (show (e :: IOException))
                          hClose h
@@ -74,7 +74,7 @@ net action = do
     listen s 1
     forever $ do (ns, n) <- accept s
                  putStrLn $ "connect from " ++ show n
-                 forkIO (bracket (socketToHandle ns ReadMode) hClose $ \h -> 
+                 forkIO (bracket (socketToHandle ns ReadMode) hClose $ \h ->
                          do hSetBuffering h NoBuffering
                             action h)
 
